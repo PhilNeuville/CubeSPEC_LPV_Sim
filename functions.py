@@ -1,14 +1,17 @@
 import os
 
+import numpy as np
+
 from parameters import *
 from PyAstronomy import pyasl
+from scipy import signal
 from scipy.integrate import simps # integration with Simpson formula
 from scipy.interpolate import interp1d
 
 """ General functions """
 
 
-def get_Tlusty_spec(common_path, final_folder, Teff, g, v):
+def Get_Tlusty_spec(common_path, final_folder, Teff, g, v):
     """
     Import Tlusty spectrum from file given certain Teff, g, and v
 
@@ -46,7 +49,7 @@ def get_Tlusty_spec(common_path, final_folder, Teff, g, v):
     return Tlusty_spec
 
 
-def get_orders(common_path, order_filename):
+def Get_orders(common_path, order_filename):
     """
     Import the wavelengths information for each spectral order
 
@@ -75,7 +78,7 @@ def get_orders(common_path, order_filename):
     return order_numbers, lambda_cen, lambda_min, lambda_max
 
 
-def cut_specrange(wave, flux, wave_min, wave_max):
+def Cut_specrange(wave, flux, wave_min, wave_max):
     """
     Extract the spectral range of CubeSPEC
 
@@ -97,7 +100,7 @@ def cut_specrange(wave, flux, wave_min, wave_max):
     return wave, flux
 
 
-def scale_vmag(wave, flux, Vmag):
+def Scale_vmag(wave, flux, Vmag):
     """
     Convert flux to certain Vmag
 
@@ -135,7 +138,7 @@ def scale_vmag(wave, flux, Vmag):
 
 
 # Rebin the spectrum for broadening (from Julia Bodensteiner)
-def rebin(wave, flux, err=False, stepwidth=1.25, verbose=False):
+def Rebin(wave, flux, err=False, stepwidth=1.25, verbose=False):
     """
     Function to interpolate from old wavelength (wave) to new wavelength array
     (From Julia Bodensteiner)
@@ -238,7 +241,7 @@ def Calc_TlustyStellarSpec(Tlusty_spec, rad_sol, dist_pc):
 
 
 # New rebinning function for colour dependent parameters in CubeSpec optical characteristics
-def rebin_params(wave, param, wave_bin, kind):
+def Rebin_params(wave, param, wave_bin, kind):
     """
     Interpolate necessary for mirror reflectivity and QE (response detector) -> cos' defined only at several wavelength (PN)
 
@@ -256,7 +259,7 @@ def rebin_params(wave, param, wave_bin, kind):
 
     return param_interp
 
-def get_transmission(wave_bin, mirror_reflectivity):
+def Get_transmission(wave_bin, mirror_reflectivity):
     """
     Obtain the total transmission (dependent on interpolated mirror reflectivity and QE
 
@@ -473,10 +476,29 @@ def Calc_ObsSimFlux(wave_bin, flux, noise, blaze, area, ExpTime, resolution):
 
     return np.array(ObsSimFlux)
 
+
+def Norm_spec(wave_bin, flux, abs_flux):
+    """
+    Normalise the spectrum
+
+    Args:
+    wave_bin [A]: Wavelength array
+    flux [photons/bin or pixel]: Non-normalised flux array
+    abs_flux [photons/bin or pixel]: Absolute flux array
+
+    Out:
+    normed_flux: Normalised flux
+    """
+    normed_flux = []
+    for wave in range(len(wave_bin)):
+        normed_flux.append(flux[wave] / abs_flux[wave])
+
+    return np.array(normed_flux)
+
 """FUNCTIONS FOR PULSATIONS MATTER"""
 
 
-def get_pulsations(pulsation_dir):
+def Get_pulsations(pulsation_dir):
     """
     Extract the pulsational profiles of the time serie delivered by FAMIAS
 
@@ -523,7 +545,7 @@ def get_pulsations(pulsation_dir):
     return np.array(wvl), pulsations
 
 
-def get_null_profile(null_dir):
+def Get_null_profile(null_dir):
     """
     Extract the null pulsation profiles implemented in FAMIAS (constant gaussian profile)
 
@@ -550,7 +572,7 @@ def get_null_profile(null_dir):
 
     return np.array(wvl), np.array(null_pulsations)
 
-def line_invert(spectral_array):
+def Line_invert(spectral_array):
     """
     Invert a normalised line/spectrum (ones to zeroes/zeroes to ones)
 
@@ -566,7 +588,7 @@ def line_invert(spectral_array):
     return reversed_array
 
 
-def mean_pul(pulsations):
+def Mean_pul(pulsations):
     """
     Compute the mean profile of the time serie
     ((and use it for deconvolving the time serie (to remove pressure broadening?)))
@@ -590,7 +612,7 @@ def mean_pul(pulsations):
     return np.array(mean_profile)
 
 
-def norm_pul(wvl, pul, mean_profile):
+def Norm_pul(wvl, pul, mean_profile):
     """
     Normalise the pulsations (making a so-called "kernel") #TODO: use the mean profile or each step's one?
 
@@ -618,10 +640,31 @@ def norm_pul(wvl, pul, mean_profile):
 
     return normed_pulsations
 
+def Convolve_spec_puls(normalised_spectrum, puls, mode):
+    """
+    Make the convolution between the (normalised & inverted) Tlusty spectrum and (normalised & inverted) pulsation profiles
+
+    Args:
+    normalised_spectrum: Normalised, inverted, and scaled Tlusty spectrum
+    puls: Normalised and inverted pulsation profiles (ND array)
+    mode: string indicating the size of the output ('full', 'valid' or 'same')
+
+    Out:
+    convolved_spectra: Time serie of pulsating spectra
+    """
+    # New ND array to work with
+    convolved_spectra = np.zeros((len(normalised_spectrum), np.shape(puls)[1]))
+
+    for pul in range(np.shape(puls)[1]):
+        #convolved_spectra[:, pul] = signal.fftconvolve(normalised_spectrum, puls[:, pul], mode)
+        convolved_spectra[:, pul] = Line_invert(signal.fftconvolve(normalised_spectrum, puls[:, pul], mode))
+        #convolved_spectra[:, pul] = Line_invert(convolved_spectra[:, pul])
+
+    return convolved_spectra
 
 """ Deal with outputs"""
 
-def give_outputs(output_path, folder_name, xaxis, yaxis):
+def Give_outputs(output_path, folder_name, xaxis, yaxis):
     """
     Write the (output) data into a '.dat' file in a give folder
 
@@ -640,7 +683,7 @@ def give_outputs(output_path, folder_name, xaxis, yaxis):
     if not isExist:
         # Create a new directory because it does not exist
         os.makedirs(out_path_dir)
-        print("The new directory is created!")
+        print("The new directory: " + folder_name + ", is created!")
 
     # # Store the data by stacking the axes in 2 columns
     # DataOut = np.column_stack((xaxis, yaxis))
@@ -650,7 +693,7 @@ def give_outputs(output_path, folder_name, xaxis, yaxis):
     # Works for data that are store
     for i in range(np.shape(yaxis)[1]):
         # Store the data by stacking the axes in 2 columns
-        DataOut = np.column_stack((xaxis, yaxis[:, i]))
+        DataOut = np.column_stack((xaxis, yaxis[:, i])) #TODO: round up to e-8 as FAMIAS does?
         # Write the data into a '.dat' file
         np.savetxt(out_path_dir + '{}.dat'.format(i), DataOut)
 

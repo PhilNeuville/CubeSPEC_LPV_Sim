@@ -30,17 +30,24 @@ SpecType = 'B'            # O, B, A, F, G, K, M
 flux_0_johnson_v = 3.735 * 1e-9 * 840 # erg/s/cm²
 
 # Paths, filenames & directories
+# Common path where the inputs and outputs are/will be stored
 common_path = '/Users/philippen/Library/Mobile Documents/com~apple~CloudDocs/Desktop/PhD/LPV Simulator'
+# Figures folder
 fig_path = common_path + '/' + 'Figures/Teff{}g{}R{}D{}/'.format(Teff, g, rad_sol, dist_pc)
+# Pulsation inputs
 pulsation_path = common_path + '/' + 'Pulsations_famias'
+# Pulsation outputs (convolved spectra)
 output_path = common_path + '/' + 'Pulsations_OUT'
+# Spectral orders .txt file
 order_filename = 'blaze_orders.txt'
-pulsation_dir = 'tutorial_test'
-null_profile_dir = 'tutorial_null'
+# Folder of the pulsation inputs
+pulsation_dir = 'beta_Cep_vsini0'
+# Folder of the static profile
+null_profile_dir = 'beta_Cep_vsini0_static'
 
 # CubeSPEC wavelength range (boundaries)
-lambda_lower = 4200 # A
-lambda_upper = 6200 # A
+lambda_lower = 4190 # A
+lambda_upper = 6210 # A
 mean_wavel = 5200   # middle wavelength of CubeSPEC range [A]
 
 # Spectrograph parameters

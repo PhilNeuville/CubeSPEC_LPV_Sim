@@ -16,11 +16,11 @@ from functions import *
 from parameters import *
 
 # Import Tlusty spectrum from file given certain Teff, g, v
-Tlusty_spec = get_Tlusty_spec(common_path, 'Grid Full', Teff, g, v)
-Tlusty_sed = get_Tlusty_spec(common_path, 'Grid SED', Teff, g, v)
+Tlusty_spec = Get_Tlusty_spec(common_path, 'Grid Full', Teff, g, v)
+Tlusty_sed = Get_Tlusty_spec(common_path, 'Grid SED', Teff, g, v)
 
 # Import the wavelengths for each order
-order_numbers, lambda_cen, lambda_min, lambda_max = get_orders(common_path, order_filename)
+order_numbers, lambda_cen, lambda_min, lambda_max = Get_orders(common_path, order_filename)
 
 # Settings for figures
 #plt.style.use('./Plots/plots.mplstyle')
@@ -51,8 +51,8 @@ th_SED = intFunc(wavelength)
 print(len(wavelength), len(th_SED))
 
 # Select only CubeSPEC wavelength range
-wavelength_cube, th_flux_cube = cut_specrange(wavelength, th_flux, lambda_lower, lambda_upper)
-_, th_SED_cube = cut_specrange(wavelength, th_SED, lambda_lower, lambda_upper)
+wavelength_cube, th_flux_cube = Cut_specrange(wavelength, th_flux, lambda_lower, lambda_upper)
+_, th_SED_cube = Cut_specrange(wavelength, th_SED, lambda_lower, lambda_upper)
 
 # Size of the plot figures
 plt.rcParams['figure.figsize'] = [12, 5]
@@ -122,8 +122,8 @@ v_mag_SED = -2.5 * np.log10(flux_in_v_band_SED / flux_0_johnson_v)
 print("Estimated V-band magnitude before scaling: ", v_mag, v_mag_SED)
 
 # Scale Tlusty spectrum to correspond to V magnitude given as input
-_, th_flux_scaled = scale_vmag(wavelength_cube, th_flux_cube, Vmag)
-_, th_SED_scaled = scale_vmag(wavelength_cube, th_SED_cube, Vmag)
+_, th_flux_scaled = Scale_vmag(wavelength_cube, th_flux_cube, Vmag)
+_, th_SED_scaled = Scale_vmag(wavelength_cube, th_SED_cube, Vmag)
 
 # Estimation of V-band magnitude after scaling (Check)
 # Integrate product of spectrum and transmission curve over all wavelengths = Give total flux within the V band
@@ -153,8 +153,8 @@ print("Estimated V-band magnitude after scaling: ", v_mag_sc, v_mag_sc_SED)
 #resol_power = resolution # not the same as the resolution dlambda!!! R = lambda / dlambda = 55000 is the resolving power
 
 # Call rebinning function
-wave_bin, flux_bin = rebin(wavelength_cube, th_flux_scaled, stepwidth = mean_wavel/resolution/nPix_per_resol)
-_, sed_bin = rebin(wavelength_cube, th_SED_scaled, stepwidth = mean_wavel/resolution/nPix_per_resol)
+wave_bin, flux_bin = Rebin(wavelength_cube, th_flux_scaled, stepwidth = mean_wavel/resolution/nPix_per_resol)
+_, sed_bin = Rebin(wavelength_cube, th_SED_scaled, stepwidth = mean_wavel/resolution/nPix_per_resol)
 
 # Call rotational broadening mechanism
 flux_rot = Apply_Rotation(wave_bin, flux_bin, vsini)
@@ -221,11 +221,11 @@ v_mag_test_SED = -2.5 * np.log10(flux_in_v_band_SED / flux_0_johnson_v)
 print("Estimated V-band magnitude (Test after broadening): ", v_mag_test, v_mag_test_SED)
 
 # Call rebinning for necessary parameters
-mirror_reflectivity = rebin_params(wave_color, mirror_ref_nobin, wave_bin, "quadratic")
-QE = rebin_params(wave_color, QE_nobin, wave_bin, "quadratic")
+mirror_reflectivity = Rebin_params(wave_color, mirror_ref_nobin, wave_bin, "quadratic")
+QE = Rebin_params(wave_color, QE_nobin, wave_bin, "quadratic")
 
 # Total transmission (dependent on interpolated mirror reflectivity)
-transmission = get_transmission(wave_bin, mirror_reflectivity)
+transmission = Get_transmission(wave_bin, mirror_reflectivity)
 
 # elemss = []
 # for elem in mirror_ref_nobin:
@@ -384,8 +384,8 @@ plt.show()
 
 """Normalised spectrum"""
 plt.figure()
-plt.plot(wave_bin, line_invert(ObsSimFlux_bin/(sed_bin/blaze_peak)), linewidth=0.7, label='Normalised Flux')
-plt.xlim(lambda_lower, lambda_upper)
+plt.plot(wave_bin, Line_invert(ObsSimFlux_bin/(sed_bin/blaze_peak)), linewidth=0.7, label='Normalised Flux')
+plt.xlim(lambda_lower - 10, lambda_upper + 10)
 plt.xlabel('Wavelength [$\AA$]')
 plt.ylabel('Normalised flux')
 #plt.legend(loc='best')
@@ -397,12 +397,12 @@ plt.savefig(fig_path+'normFlux_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc,
 plt.show()
 
 # Pulsation time serie
-wvl, pulsations = get_pulsations('tutorial_test')        # extract pulsations info
-rev_pul = line_invert(pulsations)                        # reverse pulsations
-mean_profile = mean_pul(rev_pul)                         # compute mean profile
-normed_pul = norm_pul(wvl, rev_pul, mean_profile)        # normalise pulsations
+wvl, pulsations = Get_pulsations(pulsation_dir)        # extract pulsations info
+rev_pul = Line_invert(pulsations)                        # reverse pulsations
+mean_profile = Mean_pul(rev_pul)                         # compute mean profile
+normed_pul = Norm_pul(wvl, rev_pul, mean_profile)        # normalise pulsations
 
-convo_test = signal.fftconvolve(line_invert(ObsSimFlux_bin/(sed_bin/blaze_peak)), normed_pul[:, 56], mode = 'same')
+convo_test = signal.fftconvolve(Line_invert(ObsSimFlux_bin/(sed_bin/blaze_peak)), normed_pul[:, 56], mode = 'same')
 
 """Convolution test with a pulsation profile"""
 plt.figure()
@@ -420,7 +420,7 @@ plt.show()
 plt.figure()
 
 for i in range(np.shape(normed_pul)[1]):
-    convo = signal.fftconvolve(line_invert(ObsSimFlux_bin / (sed_bin / blaze_peak)), normed_pul[:, i], mode='same')
+    convo = signal.fftconvolve(Line_invert(ObsSimFlux_bin / (sed_bin / blaze_peak)), normed_pul[:, i], mode='same')
     plt.plot(wave_bin, convo, linewidth = 0.7, alpha = 0.5)
 plt.xlim(lambda_lower, lambda_upper)
 plt.xlabel('Wavelength [$\AA$]')
