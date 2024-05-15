@@ -41,13 +41,13 @@ output_path = common_path + '/' + 'Pulsations_OUT'
 # Spectral orders .txt file
 order_filename = 'blaze_orders.txt'
 # Folder of the pulsation inputs
-pulsation_dir = 'beta_Cep_vsini0'
+pulsation_dir = 'beta_Cep_vsini100'
 # Folder of the static profile
-null_profile_dir = 'beta_Cep_vsini0_static'
+null_profile_dir = 'beta_Cep_vsini100_static'
 
 # CubeSPEC wavelength range (boundaries)
-lambda_lower = 4190 # A
-lambda_upper = 6210 # A
+lambda_lower = 4200 # A
+lambda_upper = 6200 # A
 mean_wavel = 5200   # middle wavelength of CubeSPEC range [A]
 
 # Spectrograph parameters

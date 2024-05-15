@@ -298,12 +298,12 @@ blaze_peak = Calc_Blaze_Peak(wave_bin, lambda_cen, lambda_min, lambda_max, order
 # Call functions to extract observed simulated spectrum
 """Conversed flux with response (Unit: photons/bin)"""
 flux_eff = Calc_ConversionFlux(wave_bin, flux_broad, M1_area, QE, transmission, blaze_peak)
-flux, straylight = Calc_Flux_pix(wave_bin, flux_eff, ExpTime, resolution, mean_wavel, transmission, QE)
-flux_bin, straylight_bin = Calc_Flux_bin(wave_bin, flux_eff, ExpTime, resolution, mean_wavel, transmission, QE)
+flux, straylight = Calc_Flux_pix(wave_bin, flux_eff, ExpTime, resolution, transmission, QE)
+flux_bin, straylight_bin = Calc_Flux_bin(wave_bin, flux_eff, ExpTime, resolution, transmission, QE)
 
 sed_eff = Calc_ConversionFlux(wave_bin, sed_bin, M1_area, QE, transmission, blaze_peak)
-sed, _ = Calc_Flux_pix(wave_bin, sed_eff, ExpTime, resolution, mean_wavel, transmission, QE)
-sed_bin, _ = Calc_Flux_bin(wave_bin, sed_eff, ExpTime, resolution, mean_wavel, transmission, QE)
+sed, _ = Calc_Flux_pix(wave_bin, sed_eff, ExpTime, resolution, transmission, QE)
+sed_bin, _ = Calc_Flux_bin(wave_bin, sed_eff, ExpTime, resolution, transmission, QE)
 
 """Noise and SNR"""
 noise, snr = Calc_Noise(wave_bin, flux, straylight, ExpTime)
@@ -312,8 +312,8 @@ print('Average SNR: ',np.median(snr))
 print('Average SNR: ',np.median(snr_bin))
 
 """Observed simulated spectrum (Units: erg/s/cm²/A) or (photons/bin)"""
-ObsSimFlux = Calc_ObsSimFlux(wave_bin, flux, noise, blaze_peak, M1_area, ExpTime, resolution)
-ObsSimFlux_bin = Calc_ObsSimFlux(wave_bin, flux_bin, noise_bin, blaze_peak, M1_area, ExpTime, resolution)
+ObsSimFlux = Calc_ObsSimFlux(wave_bin, flux, noise, blaze_peak)
+ObsSimFlux_bin = Calc_ObsSimFlux(wave_bin, flux_bin, noise_bin, blaze_peak)
 
 # Test new straylight
 plt.figure()
@@ -327,7 +327,7 @@ plt.ylabel('Flux/Straylight [photons/bin]')
 plt.legend(loc='best')
 # plt.savefig('title.svg', facecolor='w', transparent=False, format='svg')
 plt.savefig('title.pdf', facecolor='w', transparent=False, format='pdf')
-plt.show()
+# plt.show()
 
 # Plots
 x_ax = np.arange(0, len(wave_bin), 1)
@@ -347,7 +347,7 @@ plt.title('Noise')
 #             facecolor='w', transparent=False, format='svg')
 plt.savefig(fig_path+'Noise_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc, rad_sol, vsini),
             facecolor='w', transparent=False, format='pdf')
-plt.show()
+# plt.show()
 
 """Observed simulated spectrum"""
 plt.figure()
@@ -363,7 +363,7 @@ plt.title('Observed simulated spectrum')
 #             facecolor='w', transparent=False, format='svg')
 plt.savefig(fig_path+'ObservedSimulatedSpectrum_T{}g{}D{}R{}vsini{}2.pdf'.format(Teff, g, dist_pc, rad_sol, vsini),
             facecolor='w', transparent=False, format='pdf')
-plt.show()
+# plt.show()
 
 """Signal-to-noise ratio"""
 plt.figure()
@@ -380,7 +380,7 @@ plt.title('Signal-to-noise ratio')
 #             facecolor='w', transparent=False, format='svg')
 plt.savefig(fig_path+'SNR_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc, rad_sol, vsini),
             facecolor='w', transparent=False, format='pdf')
-plt.show()
+# plt.show()
 
 """Normalised spectrum"""
 plt.figure()
@@ -394,7 +394,7 @@ plt.title('Reversed Normalised Flux')
 #             facecolor='w', transparent=False, format='svg')
 plt.savefig(fig_path+'normFlux_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc, rad_sol, vsini),
             facecolor='w', transparent=False, format='pdf')
-plt.show()
+# plt.show()
 
 # Pulsation time serie
 wvl, pulsations = Get_pulsations(pulsation_dir)        # extract pulsations info
@@ -414,7 +414,7 @@ plt.ylabel('Normalised flux')
 plt.title('Convo test')
 #plt.savefig(fig_path+'normFlux_T{}g{}D{}R{}vsini{}.svg'.format(Teff, g, dist_pc, rad_sol, vsini), facecolor='w', transparent=False, format='svg')
 plt.savefig(fig_path+'normFlux_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc, rad_sol, vsini), facecolor='w', transparent=False, format='pdf')
-plt.show()
+# plt.show()
 
 """Additional test"""
 plt.figure()

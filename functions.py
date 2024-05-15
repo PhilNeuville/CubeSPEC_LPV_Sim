@@ -345,7 +345,7 @@ def Calc_ConversionFlux(wave_bin, flux_broad, area, QE, transmission, blaze_peak
     return np.array(flux_eff)
 
 
-def Calc_Flux_pix(wave_bin, flux_eff, ExpTime, resolution, mean_wavel, transmission, QE):
+def Calc_Flux_pix(wave_bin, flux_eff, ExpTime, resolution, transmission, QE):
     """
     Calculate the amount of photons per pixel that are detected by CubeSPEC and the straylight
 
@@ -388,17 +388,17 @@ def Calc_Flux_pix(wave_bin, flux_eff, ExpTime, resolution, mean_wavel, transmiss
 
     return flux, straylight
 
-def Calc_Flux_bin(wave_bin, flux_eff, ExpTime, resolution, mean_wavel, transmission, QE):
+def Calc_Flux_bin(wave_bin, flux_eff, ExpTime, resolution, transmission, QE):
     """
     Calculate the amount of photons per bin that are detected by CubeSPEC and the straylight
 
     Args:
     wave_bin [A]: Wavelength array
     flux_eff [photons/s/A]: Effective stellar flux
-#    IntMag: Magnitude array as function of wavelength  HSA:31/7: not needed cos' we have an input flux
-#    SpecType: Spectral type of star
     ExpTime [s]: Exposure time for detection
     resolution [lambda/delta lambda]: Spectral resolution of detector
+    transmission: Mirror transmission (extrapolated)
+    QE: Quantum efficiency (extrapolated)
 
     Out:
     flux [photons/bin]: Amount of photons detected (per bin)
@@ -426,6 +426,31 @@ def Calc_Flux_bin(wave_bin, flux_eff, ExpTime, resolution, mean_wavel, transmiss
 
     return flux, straylight
 
+def Calc_Stray_only(wave_bin, flux, ExpTime, resolution, transmission, QE):
+    """
+    Calculate the straylight only [photons/bin]
+
+    Args:
+    wave_bin [A]: Wavelength array
+    flux [photons/bin]:Amount of photons detected
+    Exptime [s]: Exposure time for detection
+    resolution: Spectral resolution of detector
+    transmission: Mirror transmission (extrapolated)
+    QE: Quantum efficiency (extrapolated)
+
+    Out:
+    straylight [photons/bin]: Amount of straylight photons detected (per bin)
+    """
+    straylight = []
+    for wave in range(len(wave_bin)):
+        stray_m1 = straylight_M1 * wave_bin[wave] / resolution * transmission[wave] * QE[wave] * ExpTime  # Unit: photons/bin
+        stray_baffle = straylight_baffle * nPix_per_resol * QE[wave] * ExpTime  # Unit: photons/bin
+        stray_internal = straylight_internal * flux[wave]  # Unit: photons/bin
+        straylight.append(stray_m1 + stray_baffle + stray_internal)
+
+    return straylight
+
+
 def Calc_Noise(wave_bin, flux, straylight, ExpTime):
     """
     Calculate the noise level in photons/bin given the flux and straylight
@@ -449,7 +474,7 @@ def Calc_Noise(wave_bin, flux, straylight, ExpTime):
 
 
 # Observed simulated spectrum
-def Calc_ObsSimFlux(wave_bin, flux, noise, blaze, area, ExpTime, resolution):
+def Calc_ObsSimFlux(wave_bin, flux, noise, blaze):
     """
     Function to calculate final observed simulated spectrum in unit [erg/s/cm²/A] [photons/pix]?
 
@@ -655,6 +680,7 @@ def Convolve_spec_puls(normalised_spectrum, puls, mode):
     # New ND array to work with
     convolved_spectra = np.zeros((len(normalised_spectrum), np.shape(puls)[1]))
 
+    # Convolving the spectrum with each pulsation step
     for pul in range(np.shape(puls)[1]):
         #convolved_spectra[:, pul] = signal.fftconvolve(normalised_spectrum, puls[:, pul], mode)
         convolved_spectra[:, pul] = Line_invert(signal.fftconvolve(normalised_spectrum, puls[:, pul], mode))
