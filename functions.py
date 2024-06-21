@@ -561,7 +561,7 @@ def Get_pulsations(pulsation_dir):
 
     #print('Number of files in folder "{}": {} files'.format(pulsation_dir, count))
 
-    # Loop over the pulsational time-series
+    # Loop over pulsational time-series
     for i in range(count - 1):
         # Construct the full path to the file
         filename = "{}.dat".format(i)

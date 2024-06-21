@@ -158,7 +158,7 @@ for dir in pul_dirs:
 
     print('Pulsation time series: DONE \n')
 
-    """TEST to see if this is faster with a single function"""
+    """TEST to see if this is faster with a single function: it is the case!"""
 
     Huge_all(wave_bin, dir, rv, rev_normed_spec, normed_puls, 'same', sed_bin, transmission, QE, blaze_peak, line_name, line_inf, line_sup)
 

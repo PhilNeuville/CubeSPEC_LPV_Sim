@@ -41,7 +41,7 @@ fig_path = common_path + '/' + 'Figures/Teff{}g{}R{}D{}/'.format(Teff, g, rad_so
 pulsation_path = common_path + '/' + 'Pulsations_famias'
 # pulsation_path = ster_path + '/' + 'Pulsations_famias'
 
-# Spectral orders .txt file
+# Spectral orders file
 order_filename = 'blaze_orders.txt'
 
 # Folder of the pulsation inputs
