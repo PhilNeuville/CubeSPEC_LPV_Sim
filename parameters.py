@@ -5,59 +5,95 @@ import numpy as np
 Variables in code
 """
 
-# Constants
+### Constants
 cc = 299792458            # speed of light [m/s]
 h = 6.626 * 1e-34         # Plank's constant [J*s]
 sigma = 5.670 * 1e-8      # Stefan-Boltzmann constant [W/m²/K^4]
 Rsun_pc = 2.25461 * 1e-8  # radius of the Sun [pc]
 
-# Define the Teff, g, and v values you want to import (Tlusty BStarGrid2006)
-Teff = 27000    # K (Beta Ceph)
-g = 400         # m/s² (Surface gravity)
-v = 2           # km/s (Microturbulent velocity)
+### Define the Teff, g, and v values you want to import (Tlusty BStarGrid2006)
+Teff = 27000              # K (Beta Ceph)
+g = 400                   # m/s² (Surface gravity)
+v = 2                     # km/s (Microturbulent velocity)
 
-# Parameters
-rad_sol = 5.6      # R_sol (Beta Ceph)
-dist_pc = 210      # pc
-vsini = 100        # km/s (or 300)
+### Parameters
+rad_sol = 5.6             # R_sol (Beta Ceph)
+dist_pc = 210             # pc
+vsini = 100               # km/s (or 300)
 
-# Stellar parameters
+### Stellar parameters
 Vmag = 4                  # Magnitude
 ExpTime = 900             # Exposure time (s)
 SpecType = 'B'            # O, B, A, F, G, K, M
 
-# V band zero point flux
+### V band zero point flux
 flux_0_johnson_v = 3.735 * 1e-9 * 840 # erg/s/cm²
 
-# Paths, filenames & directories
+### Paths, filenames & directories
 # Common path where the inputs and outputs are/will be stored
 common_path = '/Users/philippen/Library/Mobile Documents/com~apple~CloudDocs/Desktop/PhD/LPV Simulator'
+ster_path = '/STER/philippen/LPV_sim'
+
 # Figures folder
 fig_path = common_path + '/' + 'Figures/Teff{}g{}R{}D{}/'.format(Teff, g, rad_sol, dist_pc)
+
 # Pulsation inputs
 pulsation_path = common_path + '/' + 'Pulsations_famias'
-# Pulsation outputs (convolved spectra)
-output_path = common_path + '/' + 'Pulsations_OUT'
+# pulsation_path = ster_path + '/' + 'Pulsations_famias'
+
 # Spectral orders .txt file
 order_filename = 'blaze_orders.txt'
+
 # Folder of the pulsation inputs
-pulsation_dir = 'beta_Cep_vsini100'
+# pulsation_dir = 'beta_Cep_vsini100'
+# pul_dirs = ['3months_15min_l0m0_11.53cd', '3months_15min_l1m0_11.53cd', '3months_15min_l1m1_11.53cd', '3months_15min_l8m0_11.53cd']
+pul_dirs = ['3months_90min_l0m0_11.53cd', '3months_90min_l1m0_11.53cd', '3months_90min_l1m1_11.53cd', '3months_90min_l8m0_11.53cd']
+
 # Folder of the static profile
 null_profile_dir = 'beta_Cep_vsini100_static'
 
-# CubeSPEC wavelength range (boundaries)
+# Pulsation outputs (convolved spectra)
+output_path = common_path + '/' + 'Pulsations_OUT/Teff{}g{}R{}D{}'.format(Teff, g, rad_sol, dist_pc)
+# output_path = ster_path + '/' + 'Pulsations_OUT/Teff{}g{}R{}D{}'.format(Teff, g, rad_sol, dist_pc)
+
+### CubeSPEC wavelength range (boundaries)
 lambda_lower = 4200 # A
 lambda_upper = 6200 # A
 mean_wavel = 5200   # middle wavelength of CubeSPEC range [A]
 
-# Spectrograph parameters
+### Spectral lines "data" lists of names, lower, upper and central wavelengths maybe?
+# line_name = ['Hβ', 'SiIII', 'HeI']
+# line_cen = [4861, 4552, 5876]
+# line_inf = [4840, 4550, 5871]
+# line_sup = [4882, 4555, 5881]
+#
+# line_name = ['HeI']
+# line_cen = [5876]
+# line_inf = [5871]
+# line_sup = [5881]
+#
+# line_name = ['SiIII']
+# line_cen = [4552]
+# line_inf = [4550]
+# line_sup = [4555]
+#
+line_name = ['SiIII', 'HeI']
+line_cen = [4552, 5876]
+line_inf = [4550, 5871]
+line_sup = [4555, 5881]
+
+noise_status = True
+
+line_wvl = 5200 # For now the middle of the range for rebinning the pulsation profile for convolution matter (past)
+
+### Spectrograph parameters
 resolution = 55000              # R = lambda/delta_lambda of CubeSpec
 grating_groove_density = 41.59  # lines/mm
 grating_spacing = 24.0442414    # nm
 blaze_angle = np.radians(76)    # radians
 ratio_edge_centre_tm = 0.4
 
-# CubeSPEC characteristics (wavelength independent)
+### CubeSPEC characteristics (wavelength independent)
 # Intrinsic colors
 UB = {'O': -1.20, 'B': -0.50, 'A': 0.10, 'F': 0.00, 'G': 0.20, 'K': 1.10, 'M': 1.30 }
 UB = {'O': -0.80, 'B': -0.20, 'A': 0.10, 'F': 0.00, 'G': 0.10, 'K': 0.50, 'M': 0.70 }
@@ -98,7 +134,7 @@ straylight_baffle = 1                       # photons/bin/s (reflected by baffle
 straylight_baffle = 1 / nPix_per_resol      # photons/pixel/s (3.08 pixels per resol. elem.)
 straylight_internal = 0.03                  # fraction of local flux (Spectrograph straylight)
 
-# CubeSpec optical characteristics (wavelength dependent -> interpolation required)
+#### CubeSpec optical characteristics (wavelength dependent -> interpolation required)
 # Colors wvl: ['U', 'B', 'V', 'R', 'I']
 wave_color = [3800, 4400, 5500, 6400, 7900]  # Angstrom  #QUESTION: approximate, best use effective filter lam0?
 

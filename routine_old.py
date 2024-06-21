@@ -1,7 +1,5 @@
 # Imports
-import numpy as np
 import imageio.v2 as imageio
-import os, shutil
 
 from datetime import datetime
 from functions import *
@@ -142,25 +140,21 @@ print('Tlusty scaling and normalisation: DONE \n')
 """Pulsation time serie delivered by FAMIAS: inversion and normalisation"""
 ###########################################################################
 
-for dir in pul_dirs:
-    # Import the pulsation profiles
-    # rv, puls = Get_pulsations(pulsation_dir)
-    rv, puls = Get_pulsations(dir)
 
-    # Invert pulsation profiles
-    rev_puls = Line_invert(puls)
+# Import the pulsation profiles
+# rv, puls = Get_pulsations(pulsation_dir)
+rv, puls = Get_pulsations(dir)
 
-    # Compute mean (inverted) pulsation profile
-    mean_pul_profile = Mean_pul(rev_puls)
+# Invert pulsation profiles
+rev_puls = Line_invert(puls)
 
-    # Normalise pulsations (w/ mean or static profile?)
-    normed_puls = Norm_pul(rv, rev_puls, mean_pul_profile)
+# Compute mean (inverted) pulsation profile
+mean_pul_profile = Mean_pul(rev_puls)
 
-    print('Pulsation time series: DONE \n')
+# Normalise pulsations (w/ mean or static profile?)
+normed_puls = Norm_pul(rv, rev_puls, mean_pul_profile)
 
-    """TEST to see if this is faster with a single function"""
-
-    Huge_all(wave_bin, dir, rv, rev_normed_spec, normed_puls, 'same', sed_bin, transmission, QE, blaze_peak, line_name, line_inf, line_sup)
+print('Pulsation time series: DONE \n')
 
 #############################################################################
 """ Convolution between the normalised spectrum and the pulsation profiles"""
@@ -174,123 +168,123 @@ for dir in pul_dirs:
 # convolved_spectra2 = Convolve_spec_puls(rev_normed_spec, pul_bin, 'same')    # By attempting to rebin in the wvl space
 
 # Make the convolution between spectrum and pulstaion profiles IN THE log(wvl) SPACE (TIMOTHY METHOD)
-# convolved_spectra_log = Convolve_spec_puls_log(rv, wave_bin, rev_normed_spec, normed_puls, 'same')
-#
-# ### Plots the normalised spectrum
-# # plt.figure()
-# # plt.plot(wave_bin, normed_spec, linewidth=0.7, label='Normalised Flux', alpha = 0.5)
-# # # plt.plot(wave_bin, convolved_spectra[:, 0], linewidth = 0.7, label='Conv. in RV space')
-# # # plt.plot(wave_bin, convolved_spectra2[:, 0], linewidth = 0.7, label='Conv. after rebin in wvl space', c ='r')
-# # # plt.plot(wave_bin, convolved_spectra_log[:, 0], linewidth = 0.7, label='Conv. Timothy function', ls ='--')
-# # plt.plot(wave_bin, convolved_spectra_log[:, 0], linewidth = 0.7, c = 'r')
-# # plt.xlim(lambda_lower, lambda_upper)
-# # plt.xlabel('Wavelength [$\AA$]')
-# # plt.ylabel('Normalised flux')
-# # plt.legend(loc='best')
-# # plt.title('Normalised Flux')
-# # for i in range(len(line_name)):
-# #     plt.axvline(line_cen[i], lw = 0.5, ls = '--', c = 'grey')
-# #     plt.text(line_cen[i], 1.02, line_name[i], fontsize=12)
-# # # plt.savefig(fig_path+'normFlux_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc, rad_sol, vsini), facecolor='w', transparent=False, format='pdf')
-# # plt.close()
-#
-# print('Convolutions |b| Tlusty & pulsations: DONE \n')
-#
-# #################################################################################
-# """ Computes the noise & SNR for each spectrum to obtain the Observed spectrum"""
-# #################################################################################
-#
-# # New ND array to store the convolved, noisy, normalised spectra to be later written in files
-# final_time_series = np.zeros_like(convolved_spectra_log)
-# # The noise is random, so it needs to be re-computed for each step of the time-series
-# for step in range(np.shape(final_time_series)[1]):
-#
-# # However, the noise requires to use the photon flux! So we need to move back to the physical flux again
-#     phys_flux_step = convolved_spectra_log[:, step] * sed_bin
-#
-# # Compute the straylight for each spectrum of the time-series
-#     straylight_step = Calc_Stray_only(wave_bin, phys_flux_step, ExpTime, resolution, transmission, QE)
-#
-# # Use the flux and straylight to compute the noise distribution
-#     noise_step, snr_step = Calc_Noise(wave_bin, phys_flux_step, straylight_step, ExpTime)
-#
-# # Combine the actual signal with the noise distribution to obtain the observed signal
-#     ObsSimFlux = Calc_ObsSimFlux(wave_bin, phys_flux_step, noise_step, blaze_peak)
-#
-# # Normalise the observed flux
-#     ObsSimFlux_normed = Norm_spec(wave_bin, ObsSimFlux, sed_bin / blaze_peak)
-#
-# # Storing the step spectrum in an ND array accounting for the whole time series
-#     final_time_series[:, step] = np.round(ObsSimFlux_normed, 8)
-#
-# print('Noise computation: DONE \n')
-#
-# ############################################################
-# # Loop over the list of line to save (figs, Gifs and data) #
-# ############################################################
-# for line in range(len(line_name)):
-#
-#     ########################################################################
-#     """ Write the time series of pulsing spectra as outputs in .dat files"""
-#     ########################################################################
-#
-#     # Call the function to save each pulsating spectrum step as .dat files in a given folder
-#     Give_outputs(output_path, line_name[line], wave_bin, final_time_series, line_inf[line], line_sup[line])
-#
-#     # Look at the clock
-#     # mid_time = datetime.now()
-#     # # Current running time
-#     # print('Runtime:', mid_time - start_time)
-#
-#     #########################################################################
-#     """Save the plots of the time series and make Gifs animation out of it"""
-#     #########################################################################
+convolved_spectra_log = Convolve_spec_puls_log(rv, wave_bin, rev_normed_spec, normed_puls, 'same')
 
-    # ## Put all of this in a function?
-    # # folder_name = 'log_vsini100'
-    # folder_name = line_name[line]
-    #
-    # # Create the folder for the output files
-    # fig_path_dir = fig_path + '/' + 'Animations' + '/' + folder_name
-    # # Check whether the specified path exists or not
-    # isExist = os.path.exists(fig_path_dir)
-    # if not isExist:
-    #     # Create a new directory because it does not exist
-    #     os.makedirs(fig_path_dir)
-    #     print("The new FIGURES directory: " + folder_name + ", is created!")
-    #
-    # #spec_range = ((wave_bin >= line_inf[line]) & (wave_bin <= line_sup[line]))
-    # # Plot the LPV and the pulsational profiles
-    # filenames_mix = []
-    # for i in range(np.shape(final_time_series)[1]):
-    #     fig, ax = plt.subplots(2, 1, dpi = 150, figsize = (8, 10))
-    #     ax[0].plot(wave_bin, final_time_series[:, i], linewidth=0.7)
-    #     ax[0].set_xlim(line_inf[line], line_sup[line])
-    #     ax[0].set_ylim(0.95 * np.min(final_time_series[:, 0][((wave_bin >= line_inf[line]) & (wave_bin <= line_sup[line]))]), 1.04)
-    #     ax[0].set_xlabel('Wavelength [$\AA$]')
-    #     ax[0].set_ylabel('Normalised flux')
-    #     ax[0].set_title('LPV ' + line_name[line])
-    #     #
-    #     ax[1].plot(rv, puls[:, i], linewidth=0.7)
-    #     ax[1].set_xlabel('RV [km/s]')
-    #     ax[1].set_ylabel('Normalised flux')
-    #     ax[1].set_ylim(0.98 * np.min(puls[:, 0]), 1.01)
-    #     ax[1].set_title('Pulsation profiles')
-    #     #
-    #     plt.savefig(fig_path_dir + f'/{i}.png', facecolor='w', transparent=False, dpi=150)
-    #     filename_mix = fig_path_dir + f'/{i}.png'
-    #     filenames_mix.append(filename_mix)
-    #     # plt.tight_layout()
-    #     plt.close()
-    #
-    # ## Creating the GIFs from previously saved figures
-    # with imageio.get_writer(fig_path + '/' + 'Animations' + '/' + '{}.gif'.format(folder_name), fps=20) as writer:
-    #     for filename in filenames_mix:
-    #         image = imageio.imread(filename)
-    #         writer.append_data(image)
-    # print(line_name[line] + ' line GIF saved!')
-    #
-    # shutil.rmtree(fig_path_dir) # Delete the figures used for the GIF (save space)
+### Plots the normalised spectrum
+# plt.figure()
+# plt.plot(wave_bin, normed_spec, linewidth=0.7, label='Normalised Flux', alpha = 0.5)
+# # plt.plot(wave_bin, convolved_spectra[:, 0], linewidth = 0.7, label='Conv. in RV space')
+# # plt.plot(wave_bin, convolved_spectra2[:, 0], linewidth = 0.7, label='Conv. after rebin in wvl space', c ='r')
+# # plt.plot(wave_bin, convolved_spectra_log[:, 0], linewidth = 0.7, label='Conv. Timothy function', ls ='--')
+# plt.plot(wave_bin, convolved_spectra_log[:, 0], linewidth = 0.7, c = 'r')
+# plt.xlim(lambda_lower, lambda_upper)
+# plt.xlabel('Wavelength [$\AA$]')
+# plt.ylabel('Normalised flux')
+# plt.legend(loc='best')
+# plt.title('Normalised Flux')
+# for i in range(len(line_name)):
+#     plt.axvline(line_cen[i], lw = 0.5, ls = '--', c = 'grey')
+#     plt.text(line_cen[i], 1.02, line_name[i], fontsize=12)
+# # plt.savefig(fig_path+'normFlux_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc, rad_sol, vsini), facecolor='w', transparent=False, format='pdf')
+# plt.close()
+
+print('Convolutions |b| Tlusty & pulsations: DONE \n')
+
+#################################################################################
+""" Computes the noise & SNR for each spectrum to obtain the Observed spectrum"""
+#################################################################################
+
+# New ND array to store the convolved, noisy, normalised spectra to be later written in files
+final_time_series = np.zeros_like(convolved_spectra_log)
+# The noise is random, so it needs to be re-computed for each step of the time-series
+for step in range(np.shape(final_time_series)[1]):
+
+# However, the noise requires to use the photon flux! So we need to move back to the physical flux again
+    phys_flux_step = convolved_spectra_log[:, step] * sed_bin
+
+# Compute the straylight for each spectrum of the time-series
+    straylight_step = Calc_Stray_only(wave_bin, phys_flux_step, ExpTime, resolution, transmission, QE)
+
+# Use the flux and straylight to compute the noise distribution
+    noise_step, snr_step = Calc_Noise(wave_bin, phys_flux_step, straylight_step, ExpTime)
+
+# Combine the actual signal with the noise distribution to obtain the observed signal
+    ObsSimFlux = Calc_ObsSimFlux(wave_bin, phys_flux_step, noise_step, blaze_peak)
+
+# Normalise the observed flux
+    ObsSimFlux_normed = Norm_spec(wave_bin, ObsSimFlux, sed_bin / blaze_peak)
+
+# Storing the step spectrum in an ND array accounting for the whole time series
+    final_time_series[:, step] = np.round(ObsSimFlux_normed, 8)
+
+print('Noise computation: DONE \n')
+
+############################################################
+# Loop over the list of line to save (figs, Gifs and data) #
+############################################################
+for line in range(len(line_name)):
+
+    ########################################################################
+    """ Write the time series of pulsing spectra as outputs in .dat files"""
+    ########################################################################
+
+    # Call the function to save each pulsating spectrum step as .dat files in a given folder
+    Give_outputs(output_path, line_name[line], wave_bin, final_time_series, line_inf[line], line_sup[line])
+
+    # Look at the clock
+    # mid_time = datetime.now()
+    # # Current running time
+    # print('Runtime:', mid_time - start_time)
+
+    #########################################################################
+    """Save the plots of the time series and make Gifs animation out of it"""
+    #########################################################################
+
+    ## Put all of this in a function?
+    # folder_name = 'log_vsini100'
+    folder_name = line_name[line]
+
+    # Create the folder for the output files
+    fig_path_dir = fig_path + '/' + 'Animations' + '/' + folder_name
+    # Check whether the specified path exists or not
+    isExist = os.path.exists(fig_path_dir)
+    if not isExist:
+        # Create a new directory because it does not exist
+        os.makedirs(fig_path_dir)
+        print("The new FIGURES directory: " + folder_name + ", is created!")
+
+    #spec_range = ((wave_bin >= line_inf[line]) & (wave_bin <= line_sup[line]))
+    # Plot the LPV and the pulsational profiles
+    filenames_mix = []
+    for i in range(np.shape(final_time_series)[1]):
+        fig, ax = plt.subplots(2, 1, dpi = 150, figsize = (8, 10))
+        ax[0].plot(wave_bin, final_time_series[:, i], linewidth=0.7)
+        ax[0].set_xlim(line_inf[line], line_sup[line])
+        ax[0].set_ylim(0.95 * np.min(final_time_series[:, 0][((wave_bin >= line_inf[line]) & (wave_bin <= line_sup[line]))]), 1.04)
+        ax[0].set_xlabel('Wavelength [$\AA$]')
+        ax[0].set_ylabel('Normalised flux')
+        ax[0].set_title('LPV ' + line_name[line])
+        #
+        ax[1].plot(rv, puls[:, i], linewidth=0.7)
+        ax[1].set_xlabel('RV [km/s]')
+        ax[1].set_ylabel('Normalised flux')
+        ax[1].set_ylim(0.98 * np.min(puls[:, 0]), 1.01)
+        ax[1].set_title('Pulsation profiles')
+        #
+        plt.savefig(fig_path_dir + f'/{i}.png', facecolor='w', transparent=False, dpi=150)
+        filename_mix = fig_path_dir + f'/{i}.png'
+        filenames_mix.append(filename_mix)
+        # plt.tight_layout()
+        plt.close()
+
+    ## Creating the GIFs from previously saved figures
+    with imageio.get_writer(fig_path + '/' + 'Animations' + '/' + '{}.gif'.format(folder_name), fps=20) as writer:
+        for filename in filenames_mix:
+            image = imageio.imread(filename)
+            writer.append_data(image)
+    print(line_name[line] + ' line GIF saved!')
+
+    shutil.rmtree(fig_path_dir) # Delete the figures used for the GIF (save space)
 
 # Look at the clock
 end_time = datetime.now()

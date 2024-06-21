@@ -41,7 +41,7 @@ for ExpTime in exptime_list:
         _, th_flux_scaled = Scale_vmag(wavelength_cube, th_flux_cube, Vmag)
 
         # Call rebinnning function (required for broadeing mechanism convolutions)
-        wave_bin, flux_bin = Rebin(wavelength_cube, th_flux_scaled, stepwidth = mean_wavel/resolution/nPix_per_resol)
+        wave_bin, flux_bin = Rebin(wavelength_cube, th_flux_scaled, mean_wavel/resolution/nPix_per_resol)
 
         # Call rotational and instrumental broadening mechanisms
         flux_rot = Apply_Rotation(wave_bin, flux_bin, vsini)

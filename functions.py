@@ -1,6 +1,5 @@
 import os
-
-import numpy as np
+import shutil
 
 from parameters import *
 from PyAstronomy import pyasl
@@ -8,7 +7,11 @@ from scipy import signal
 from scipy.integrate import simps # integration with Simpson formula
 from scipy.interpolate import interp1d
 
+import matplotlib.pyplot as plt
+
+#########################
 """ General functions """
+#########################
 
 
 def Get_Tlusty_spec(common_path, final_folder, Teff, g, v):
@@ -128,20 +131,22 @@ def Scale_vmag(wave, flux, Vmag):
 
     # Scale spectrum to correspond to V magnitude (of 4)
     scale_factor = v_mag_4_flux_density / flux_in_v_band  # to retrieve the B-Cep mag in V band
-    # print(scale_factor)
+
     #     flux_scale = []
     #     for w in range(len(wave)):
     #         flux_scale.append(flux[w] * scale_factor)
+    #print(scale_factor)
     flux_scale = flux * scale_factor
 
-    return np.array(wave), np.array(flux_scale)
+    return scale_factor, flux_scale # update 13/06
+    #return np.array(wave), np.array(flux_scale)
 
 
 # Rebin the spectrum for broadening (from Julia Bodensteiner)
-def Rebin(wave, flux, err=False, stepwidth=1.25, verbose=False):
+def Rebin(wave, flux, stepwidth, err=False, verbose=False):
     """
     Function to interpolate from old wavelength (wave) to new wavelength array
-    (From Julia Bodensteiner)
+    (From Julia Bodensteiner) note: stepwidth was hardcoded as = 1.25
     This is required to use the broadening mechanisms (requiring evenly spaced wavelength array)
     """
     # print('stepwidth = ', stepwidth)
@@ -202,6 +207,7 @@ def Apply_Instrument(wave, flux, resolution):
     flux_instr [erg/s/cm²/A]: Theoretical stellar flux including rotational and instrumental broadening
     """
     flux_instr = pyasl.instrBroadGaussFast(wave, flux, resolution)
+    #flux_instr = pyasl.instrBroadGauss(wave, flux, resolution)
 
     return flux_instr
 
@@ -497,7 +503,7 @@ def Calc_ObsSimFlux(wave_bin, flux, noise, blaze):
         # ObsSimFlux.append(flux[wave])
 
     # Correct back for blaze function
-    ObsSimFlux = ObsSimFlux / blaze  # why dividing by the blaze? Flux on the edge > in the blaze??
+    ObsSimFlux = ObsSimFlux / blaze
 
     return np.array(ObsSimFlux)
 
@@ -520,8 +526,9 @@ def Norm_spec(wave_bin, flux, abs_flux):
 
     return np.array(normed_flux)
 
+#####################################
 """FUNCTIONS FOR PULSATIONS MATTER"""
-
+#####################################
 
 def Get_pulsations(pulsation_dir):
     """
@@ -531,11 +538,20 @@ def Get_pulsations(pulsation_dir):
     pulsation_dir: Directory's name of the pulsational time serie of interest 'fx_lm_yz'
 
     Out:
-    wavl: xaxis of the pulsational profiles TODO: check about to keep RV or turn into wvl
+    wavl: xaxis of the pulsational profiles #TODO: check about to keep RV or turn into wvl!!
     pulsations: ND array (yaxis1, yaxis2, ..., yaxisN) of the whole pulsation time-series data (N files)
     """
-    # path to the pulsational time-series (from FAMIAS)
+    # path to the pulsational time-series (generated with FAMIAS)
     pul_dir_path = pulsation_path + '/' + pulsation_dir
+
+    # # Extract the data of the 'times' file (important for FAMIAS)
+    # time_filename = "times.dat"
+    # time_file_path = pul_dir_path + '/' + time_filename
+    # # Load data from file into a Numpy array
+    # time_data = np.genfromtxt(time_file_path)
+    # # Split the data into columns
+    # # is 3rd column the weight of each spectrum? #TODO (PN: I think so)
+    # files_id, time_span, weights = time_data[:, 0], time_data[:, 1], time_data[:, 2]
 
     # Count number of files in the directory (to loop automatically over the time-series)
     count = 0
@@ -545,7 +561,7 @@ def Get_pulsations(pulsation_dir):
 
     #print('Number of files in folder "{}": {} files'.format(pulsation_dir, count))
 
-    # Loop over the pulsational 'kernel' time-series
+    # Loop over the pulsational time-series
     for i in range(count - 1):
         # Construct the full path to the file
         filename = "{}.dat".format(i)
@@ -556,7 +572,7 @@ def Get_pulsations(pulsation_dir):
 
         if i == 0:
             # Split the data into 2 columns
-            wvl = data[:, 0]        # x_axis
+            rv = data[:, 0]        # x_axis
             pulsations = data[:, 1]      # y_axis: normalised flux
             # Create an (2D) array from the columns
             #pulsations = np.column_stack((xaxis, yaxis))
@@ -567,7 +583,8 @@ def Get_pulsations(pulsation_dir):
             # Create an (ND) array by adding a column
             pulsations = np.column_stack((pulsations, yaxis))
 
-    return np.array(wvl), pulsations
+    # return np.array(wvl), pulsations
+    return rv, pulsations
 
 
 def Get_null_profile(null_dir):
@@ -596,6 +613,7 @@ def Get_null_profile(null_dir):
     null_pulsations = data[:, 1]  # y_axis: normalised flux
 
     return np.array(wvl), np.array(null_pulsations)
+
 
 def Line_invert(spectral_array):
     """
@@ -682,46 +700,259 @@ def Convolve_spec_puls(normalised_spectrum, puls, mode):
 
     # Convolving the spectrum with each pulsation step
     for pul in range(np.shape(puls)[1]):
+        print(pul + 1, ' / ', np.shape(puls)[1])
         #convolved_spectra[:, pul] = signal.fftconvolve(normalised_spectrum, puls[:, pul], mode)
         convolved_spectra[:, pul] = Line_invert(signal.fftconvolve(normalised_spectrum, puls[:, pul], mode))
         #convolved_spectra[:, pul] = Line_invert(convolved_spectra[:, pul])
 
     return convolved_spectra
 
-""" Deal with outputs"""
 
-def Give_outputs(output_path, folder_name, xaxis, yaxis):
+def Convolve_spec_puls_log(rv, wave_bin, normalised_spectrum, puls, mode):
     """
-    Write the (output) data into a '.dat' file in a give folder
-
+    Make the convolution between the (normalised & inverted) Tlusty spectrum and (normalised & inverted) pulsation profiles
+    Note: THIS IMPLEMENTS THE METHOD OF TIMOTHY INVOLVING ln(wvl)
     Args:
-    output_path: Path to the output general folder (named 'Pulsations_OUT' at the moment)
-    xaxis: Data xaxis quantity
-    yaxis: Data yaxis quantity
-    folder_name: Name of the folder to write the output files in
+    rv: Radial velocity vector of the pulsation profile [km/s]
+    wave_bin: Wavelength array [A]
+    normalised_spectrum: Normalised, inverted, and scaled Tlusty spectrum
+    puls: Normalised and inverted pulsation profiles (ND array)
+    mode: string indicating the size of the output ('full', 'valid' or 'same')
 
     Out:
+    convolved_spectra: Time serie of pulsating spectra
     """
-    # Creating the folder for the output files
-    # Check whether the specified path exists or not
+    # Move to the logspace of wvl
+    wave_log = np.log(wave_bin)
+    # ln(wvl) = int(v/c)
+    rv_c = rv / (cc * 1e-3)
+    # rebin the log(lambda) with the same stepsize as the v/c array
+    wave_log_bin, spec_log_bin = Rebin(wave_log, normalised_spectrum, np.diff(rv_c)[0])
+    # Make the convolution
+    convolution_tmp = Convolve_spec_puls(spec_log_bin, puls, mode)
+    # Back to wvl space
+    wave_back = np.exp(wave_log_bin)
+    # Rebin the convolved spectra back on the initial wavelength array
+    for step in range(np.shape(convolution_tmp)[1]):
+        print(step)
+        if step == 0:
+            _, convolved_spectra = Rebin(wave_back, convolution_tmp[:, step], mean_wavel/resolution/nPix_per_resol)
+            # We remove the last element as the Rebin function adds one
+            # This is to keep using the wave_bin vector as done from the start
+            convolved_spectra = convolved_spectra[:-1]
+        else:
+            _, convolved_spectrum_step = Rebin(wave_back, convolution_tmp[:, step], mean_wavel/resolution/nPix_per_resol)
+            # We remove the last element as the Rebin function adds one
+            convolved_spectrum_step = convolved_spectrum_step[:-1]
+            convolved_spectra = np.column_stack((convolved_spectra, convolved_spectrum_step))
+
+    return convolved_spectra
+
+
+def Rebin_puls(rv, normed_puls, line_wvl):
+    """
+    Take the normalised pulsation kernel and returns it in the wavelength space
+    Rebinned with the same stepsize as the one used for rebinning the Tlusty spectrum
+    stepsize = mean_wavel / resolution / nPix_per_resol
+
+    Args:
+    rv: Xaxis of pulsation profiles [km/s]
+    normed_puls: Normalised pulsation profiles [norm. flux]
+    line_wvl: Wavelength of the spectral line of interest
+
+    Out:
+    wvl_bin: Rebinned wavelength xaxis of pulsational profiles
+    pul_bin: Rebinned ND array of the pulsation profiles
+    """
+    # Wvl array of pulsation profile acc to the line
+    wvl = (rv / (cc * 1e-3) + 1) * line_wvl
+
+    for i in range(np.shape(normed_puls)[1]):
+        if i == 0:
+            # Rebinning each pulsation with the same stepsize
+            wvl_bin, pul_bin = Rebin(wvl, normed_puls[:, i], mean_wavel/resolution/nPix_per_resol)
+
+        else:
+            _, var = Rebin(wvl, normed_puls[:, i], mean_wavel/resolution/nPix_per_resol)
+            # Create an (ND) array by adding a column
+            pul_bin = np.column_stack((pul_bin, var))
+
+    return wvl_bin, pul_bin
+
+
+def Select_lines(full_xaxis, full_yaxis, lower_lim, upper_lim):
+    """
+    Take the entire spctra time series and split it in line(s)
+
+    Args:
+    full_xaxis: Entire xaxis quantity [A]
+    full_yaxis: Entire yaxis quantity [Normalised flux]
+    lower_lim: List of lower spectral line limits [A]
+    upper_lim: List of upper spectral line limits [A]
+
+    Out:
+    To complete...
+    """
+    return
+
+########################
+""" Deal with outputs"""
+########################
+
+
+def Give_outputs(output_path, folder_name, wvl, pulsations, wvl_inf, wvl_sup):
+    """
+    Write the (output) data into '.dat' files in a given folder
+
+    Args:
+    output_path: Path to the output folder
+    folder_name: Name of the folder to write the output files in
+    wvl: Data xaxis quantity - wavelength array [A]
+    pulsations: Data yaxis quantity - pulsating spectra [norm. flux]
+    wvl_inf: Inferior bound of the line spectral range [A]
+    wvl_sup: Superior bound of the line spectral range [A]
+
+    Out:
+    /
+    """
+    # Create the folder for the output files
     out_path_dir = output_path + '/' + folder_name + '/'
+    # Check whether the specified path exists or not
     isExist = os.path.exists(out_path_dir)
     if not isExist:
         # Create a new directory because it does not exist
         os.makedirs(out_path_dir)
-        print("The new directory: " + folder_name + ", is created!")
+        print("The new OUTPUT directory: " + folder_name + ", is created!")
 
     # # Store the data by stacking the axes in 2 columns
     # DataOut = np.column_stack((xaxis, yaxis))
     # # Write the data into a '.dat' file
     # np.savetxt(out_path_dir + 'test.dat', DataOut)
 
-    # Works for data that are store
-    for i in range(np.shape(yaxis)[1]):
+    # Copy the times.dat in the output directory (accounts for file names and cadence [days])
+    shutil.copyfile(pulsation_path + '/' + pulsation_dir + '/' + 'times.dat', out_path_dir + 'times.dat')
+
+    # Extract the spectral range of the line
+    spec_range = ((wvl >= wvl_inf) & (wvl <= wvl_sup))
+    wvl = wvl[spec_range]
+
+    # Works for data that are stored
+    for i in range(np.shape(pulsations)[1]):
         # Store the data by stacking the axes in 2 columns
-        DataOut = np.column_stack((xaxis, yaxis[:, i])) #TODO: round up to e-8 as FAMIAS does?
+        DataOut = np.column_stack((wvl, pulsations[:, i][spec_range]))
         # Write the data into a '.dat' file
-        np.savetxt(out_path_dir + '{}.dat'.format(i), DataOut)
+        np.savetxt(out_path_dir + '{}.dat'.format(i), DataOut, "%.8f")
 
     return
 
+
+def Give_times(output_path, folder_name, pulsation_dir):
+    """
+    Write the times.dat file required by FAMIAS to call the time-series
+    I'd like to make it flexible to indtoruce interruptions in the data.
+
+    Args:
+    output_path: Path to the output folder
+    folder_name: Name of the folder to write the times.dat file in
+    pulsation_dir: Folder containing the time series delivered by FAMIAS
+
+    Out: /
+    """
+    # Create the folder for the output files
+    out_path_dir = output_path + '/' + folder_name + '/'
+
+    # Copy the times.dat in the output directory (accounts for file names and cadence [days])
+    shutil.copyfile(pulsation_path + '/' + pulsation_dir + '/' + 'times.dat', out_path_dir + 'times.dat')
+
+    return
+
+
+"""MISCELLANEOUS"""
+
+
+def Huge_all(wave_bin, pulsation_dir, rv, normalised_spectrum, puls, mode, sed_bin, transmission, QE, blaze_peak, line_names, line_infs, line_sups):
+
+    # First create the folder and copy/paste the times.dat file in it
+    for line1 in range(len(line_names)):
+        # Create the folder for the output files
+        out_path_dir = output_path + '/' + pulsation_dir + '/' + line_names[line1] + '/'
+        # Check whether the specified path exists or not
+        isExist1 = os.path.exists(out_path_dir + 'noise' + '/')
+        isExist2 = os.path.exists(out_path_dir + 'noiseless' + '/')
+        if not isExist1:
+            # Create a new directory because it does not exist
+            os.makedirs(out_path_dir + 'noise' + '/')
+            # print("The new OUTPUT directory: " + line_names[line1] + ", is created!")
+        if not isExist2:
+            # Create a new directory because it does not exist
+            os.makedirs(out_path_dir + 'noiseless' + '/')
+            # print("The new OUTPUT directory: " + line_names[line1] + ", is created!")
+
+        # Copy the times.dat in the output directory (accounts for file names and cadence [days])
+        shutil.copyfile(pulsation_path + '/' + pulsation_dir + '/' + 'times.dat', out_path_dir + 'noise' + '/' + 'times.dat')
+        shutil.copyfile(pulsation_path + '/' + pulsation_dir + '/' + 'times.dat', out_path_dir + 'noiseless' + '/' + 'times.dat')
+        print('Folders for', line_names[line1], ' and times.dat file: DONE')
+
+    # Move to the logspace of wvl
+    wave_log = np.log(wave_bin)
+    # ln(wvl) = int(v/c)
+    rv_c = rv / (cc * 1e-3)
+    # Rebin the log(wvl) with the same stepsize as the v/c array
+    wave_log_bin, spec_log_bin = Rebin(wave_log, normalised_spectrum, np.diff(rv_c)[0])
+    # Back to wvl space
+    wave_back = np.exp(wave_log_bin)
+    for pul in range(np.shape(puls)[1]):
+        # Make the convolution btw TLUSTY and a pulsation step
+        convolution_tmp = Line_invert(signal.fftconvolve(spec_log_bin, puls[:, pul], mode))
+        # Rebin the spectrum with the usual wvl_bin
+        _, convolved_spectrum = Rebin(wave_back, convolution_tmp, mean_wavel/resolution/nPix_per_resol)
+        # Remove last element as the Rebin function adds one (this is to keep using wave_bin vector)
+        convolved_spectrum = convolved_spectrum[:-1]
+
+        # if noise_status == True:
+        # print('Step nb', pul + 1, ' / ', np.shape(puls)[1], ' NOISE START')
+        # Move back to physical flux to compute the photon flux required to compute the noise
+        phys_flux = convolved_spectrum * sed_bin
+        # Compute straylight
+        straylight = Calc_Stray_only(wave_bin, phys_flux, ExpTime, resolution, transmission, QE)
+        # Use the flux and straylight to compute the noise distribution & SNR
+        noise, snr = Calc_Noise(wave_bin, phys_flux, straylight, ExpTime)
+        # Combine the actual signal with the noise distribution to obtain the observed signal
+        obsSimFlux = Calc_ObsSimFlux(wave_bin, phys_flux, noise, blaze_peak)
+        # Normalise the observed flux
+        obsSimFlux_normed = Norm_spec(wave_bin, obsSimFlux, sed_bin / blaze_peak)
+        # Rounding
+        final_flux_noise = np.round(obsSimFlux_normed, 8)
+        # print('Step nb', pul + 1, ' / ', np.shape(puls)[1], ' NOISE DONE')
+        # plt.plot(wave_bin, final_flux, lw = 0.7)
+        # plt.show()
+
+        # else:
+        # print('Step nb', pul + 1, ' / ', np.shape(puls)[1], ' NOISELESS START')
+        final_flux_noiseless = np.round(convolved_spectrum, 8)
+        # print('Step nb', pul + 1, ' / ', np.shape(puls)[1], ' NOISELESS DONE')
+        # plt.plot(wave_bin, final_flux, lw = 0.7)
+        # plt.show()
+
+        for line in range(len(line_names)):
+
+            # Extract the spectral range of the line
+            spec_range = ((wave_bin >= line_infs[line]) & (wave_bin <= line_sups[line]))
+            # wave_bin = wave_bin[spec_range]
+
+            # Stack the data in columns
+            DataOut_noise = np.column_stack((wave_bin[spec_range], final_flux_noise[spec_range]))
+            DataOut_noiseless = np.column_stack((wave_bin[spec_range], final_flux_noiseless[spec_range]))
+
+            # Redefine the output directory path
+            out_path_dir = output_path + '/' + pulsation_dir + '/' + line_names[line] + '/'
+            # Write the data into a '.dat' file
+            np.savetxt(out_path_dir + 'noise' + '/' + '{}.dat'.format(pul), DataOut_noise, "%.8f")
+            np.savetxt(out_path_dir + 'noiseless' + '/' + '{}.dat'.format(pul), DataOut_noiseless, "%.8f")
+
+            # plt.plot(wave_bin[spec_range], final_flux[spec_range], lw=0.7)
+            # plt.show()
+
+        print('Step nb', pul + 1, ' / ', np.shape(puls)[1], ' DONE')
+
+    return

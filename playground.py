@@ -153,8 +153,8 @@ print("Estimated V-band magnitude after scaling: ", v_mag_sc, v_mag_sc_SED)
 #resol_power = resolution # not the same as the resolution dlambda!!! R = lambda / dlambda = 55000 is the resolving power
 
 # Call rebinning function
-wave_bin, flux_bin = Rebin(wavelength_cube, th_flux_scaled, stepwidth = mean_wavel/resolution/nPix_per_resol)
-_, sed_bin = Rebin(wavelength_cube, th_SED_scaled, stepwidth = mean_wavel/resolution/nPix_per_resol)
+wave_bin, flux_bin = Rebin(wavelength_cube, th_flux_scaled, mean_wavel/resolution/nPix_per_resol)
+_, sed_bin = Rebin(wavelength_cube, th_SED_scaled, mean_wavel/resolution/nPix_per_resol)
 
 # Call rotational broadening mechanism
 flux_rot = Apply_Rotation(wave_bin, flux_bin, vsini)
