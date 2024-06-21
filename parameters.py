@@ -45,7 +45,7 @@ pulsation_path = common_path + '/' + 'Pulsations_famias'
 order_filename = 'blaze_orders.txt'
 
 # Folder of the pulsation inputs
-# pulsation_dir = 'beta_Cep_vsini100'
+pulsation_dir = 'beta_Cep_vsini100'
 # pul_dirs = ['3months_15min_l0m0_11.53cd', '3months_15min_l1m0_11.53cd', '3months_15min_l1m1_11.53cd', '3months_15min_l8m0_11.53cd']
 pul_dirs = ['3months_90min_l0m0_11.53cd', '3months_90min_l1m0_11.53cd', '3months_90min_l1m1_11.53cd', '3months_90min_l8m0_11.53cd']
 
