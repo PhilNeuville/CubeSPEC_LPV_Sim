@@ -27,7 +27,7 @@ step = 1
 min = 0
 max = 8
 mag_list = np.arange(min, max + step, step)
-exptime_list = [60, 300, 900]
+exptime_list = [900]
 
 # Plot SNR vs V-mag
 plt.figure()
@@ -73,11 +73,14 @@ end_time = datetime.now()
 print('Runtime:', end_time - start_time)
 
 plt.axhline(200, ls = ':', color = 'k')
-plt.xlim(mag_list[0], mag_list[-1])
-plt.ylim(10, SNR_ls[0])
+# plt.xlim(mag_list[0], mag_list[-1])
+plt.xlim(3, 5)
+# plt.ylim(10, SNR_ls[0])
+plt.ylim(175, 210)
 plt.xlabel('Magnitude')
 plt.ylabel('SNR')
 plt.legend(loc = 'best')
 plt.grid(True, 'both')
-plt.savefig(common_path+'/Figures/Teff{}g{}R{}D{}/SNR_MAG_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, rad_sol, dist_pc, Teff, g, dist_pc, rad_sol, vsini), facecolor='w', transparent=False, format='pdf')
+# plt.savefig(common_path+'/Figures/Teff{}g{}R{}D{}/SNR_MAG_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, rad_sol, dist_pc, Teff, g, dist_pc, rad_sol, vsini), facecolor='w', transparent=False, format='pdf')
+plt.savefig('/Users/philippen/Desktop/SNR_Mag.pdf', facecolor='w', transparent=False, format='pdf')
 plt.show()

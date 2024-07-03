@@ -142,8 +142,7 @@ print('Tlusty scaling and normalisation: DONE \n')
 
 
 # Import the pulsation profiles
-# rv, puls = Get_pulsations(pulsation_dir)
-rv, puls = Get_pulsations(dir)
+rv, puls = Get_pulsations(pulsation_dir)
 
 # Invert pulsation profiles
 rev_puls = Line_invert(puls)
@@ -170,26 +169,26 @@ print('Pulsation time series: DONE \n')
 # Make the convolution between spectrum and pulstaion profiles IN THE log(wvl) SPACE (TIMOTHY METHOD)
 convolved_spectra_log = Convolve_spec_puls_log(rv, wave_bin, rev_normed_spec, normed_puls, 'same')
 
-### Plots the normalised spectrum
-# plt.figure()
-# plt.plot(wave_bin, normed_spec, linewidth=0.7, label='Normalised Flux', alpha = 0.5)
-# # plt.plot(wave_bin, convolved_spectra[:, 0], linewidth = 0.7, label='Conv. in RV space')
-# # plt.plot(wave_bin, convolved_spectra2[:, 0], linewidth = 0.7, label='Conv. after rebin in wvl space', c ='r')
-# # plt.plot(wave_bin, convolved_spectra_log[:, 0], linewidth = 0.7, label='Conv. Timothy function', ls ='--')
-# plt.plot(wave_bin, convolved_spectra_log[:, 0], linewidth = 0.7, c = 'r')
-# plt.xlim(lambda_lower, lambda_upper)
-# plt.xlabel('Wavelength [$\AA$]')
-# plt.ylabel('Normalised flux')
-# plt.legend(loc='best')
-# plt.title('Normalised Flux')
-# for i in range(len(line_name)):
-#     plt.axvline(line_cen[i], lw = 0.5, ls = '--', c = 'grey')
-#     plt.text(line_cen[i], 1.02, line_name[i], fontsize=12)
-# # plt.savefig(fig_path+'normFlux_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc, rad_sol, vsini), facecolor='w', transparent=False, format='pdf')
-# plt.close()
+## Plots the normalised spectrum
+plt.figure()
+plt.plot(wave_bin, normed_spec, linewidth=0.7, label='Normalised Flux', alpha = 0.5)
+# plt.plot(wave_bin, convolved_spectra[:, 0], linewidth = 0.7, label='Conv. in RV space')
+# plt.plot(wave_bin, convolved_spectra2[:, 0], linewidth = 0.7, label='Conv. after rebin in wvl space', c ='r')
+# plt.plot(wave_bin, convolved_spectra_log[:, 0], linewidth = 0.7, label='Conv. Timothy function', ls ='--')
+plt.plot(wave_bin, convolved_spectra_log[:, 0], linewidth = 0.7, c = 'r')
+plt.xlim(lambda_lower, lambda_upper)
+plt.xlabel('Wavelength [$\AA$]')
+plt.ylabel('Normalised flux')
+plt.legend(loc='best')
+plt.title('Normalised Flux')
+for i in range(len(line_name)):
+    plt.axvline(line_cen[i], lw = 0.5, ls = '--', c = 'grey')
+    plt.text(line_cen[i], 1.02, line_name[i], fontsize=12)
+# plt.savefig(fig_path+'normFlux_T{}g{}D{}R{}vsini{}.pdf'.format(Teff, g, dist_pc, rad_sol, vsini), facecolor='w', transparent=False, format='pdf')
+plt.show()
 
 print('Convolutions |b| Tlusty & pulsations: DONE \n')
-
+exit()
 #################################################################################
 """ Computes the noise & SNR for each spectrum to obtain the Observed spectrum"""
 #################################################################################

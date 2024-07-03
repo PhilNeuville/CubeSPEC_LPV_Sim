@@ -22,7 +22,7 @@ dist_pc = 210             # pc
 vsini = 100               # km/s (or 300)
 
 ### Stellar parameters
-Vmag = 4                  # Magnitude
+Vmag = 3.7                  # Magnitude
 ExpTime = 900             # Exposure time (s)
 SpecType = 'B'            # O, B, A, F, G, K, M
 
